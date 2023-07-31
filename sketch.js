@@ -95,7 +95,7 @@ function main() {
     for(let k = 0; k < numcurves; k++){
         setupCurves();
     }
-    previewCurves()
+    // previewCurves()
     // createCurves();
     // constructCurves();
     constructQuads();
