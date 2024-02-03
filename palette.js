@@ -13,6 +13,13 @@ let palettesstrings = [
     '5da6fb-fc1859-995dff-3c5e85-77a0d0-8c70ba-a8415e-ce935b-dbbb6f-69995d-5c5cfa-fc4319-e45cff-3c3c85-7777d1-af70ba-a85442-cfc95b-c9db70-5d996d-6c6cea-af4666-b86cef-43437e-7f7fc7-9a76b2-865765-a7a381-adb795-638479-9f6cb8-e5432f-e26cbb-5a4366-9c7faa-ad769a-9f554c-c39a65-c8af7b-757f6a-eb7d6c-89cb7c-f0ca6c-7d4a42-c7897f-b3a376-5f8758-80a5a6-95a8b8-7d6285-fab05c-dd4523-c3ff5c-85633c-d1a777-9eba70-42a88b-5b97cf-7090db-8d5d99',
     '0f0465-116ad2-a8e0ff-fbfaf8-c99700-ae9142-ff6600-f37449-ff1d15-f15152',
 ];
+palettesstrings = [
+     // '0f0465-116ad2-a8e0ff-fbfaf8-c99700-ae9142-ff6600-f37449-ff1d15-f15152',
+    'ff04a5-0f0465-116ad2-a8e0ff-0f6504-11d26a-a8ffe0-fbfaf8-c99700-ae9142-ff6600-f37449-ff1d15-f15152-fbfaf8-c99700-ae9142-ff6600-f37449-ff1d15-f15152',
+    //'759ef0-8aadf2-2350a8-1261ff-1b54c4',
+    // '0f0465-116ad2-a8e0ff-fbfaf8-c99700-ae9142-ff6600-f37449-ff1d15-f15152',
+    // '222222-555555-888888-bbbbbb-dddddd-ffffff',
+];
 
 function ssorted(array) {
     let narray = [];
@@ -53,9 +60,9 @@ function getFromStrings(strings) {
         var coco = [];
         caca.forEach((e, i) => {
             coco.push([
-                (caca[i][0] + 0. * map(prng.rand(), 0, 1, -.2, .2)),
-                (caca[i][1] + 0. * map(prng.rand(), 0, 1, -.2, .2)),
-                (caca[i][2] + 0. * map(prng.rand(), 0, 1, -.2, .2))
+                (caca[i][0] + 0.01 * map(prng.rand(), 0, 1, -.2, .2)),
+                (caca[i][1] + 0.01 * map(prng.rand(), 0, 1, -.2, .2)),
+                (caca[i][2] + 0.01 * map(prng.rand(), 0, 1, -.2, .2))
             ])
         });
         palettes[k] = coco;
@@ -129,4 +136,4 @@ function shuffle(array) {
 }
 
 
-export { getPalette }
+export { getPalette, shuffle }

@@ -257,12 +257,14 @@ void main() {
     gl_FragColor = vec4(vec3(v_diffuse1), ss*.6);
     gl_FragColor = vec4(vec3(v_diffuse1), 1.);
 
-    float po = power(1. - abs(2.*(noisy_uv.y-.5)), 2.);
-    float eh = fbm3(vec3(v_uv.x*v_diffuse2.y * (3.+6.*v_diffuse2.y), v_uv.y*v_diffuse2.y * 88., 14.540+ v_diffuse2.x*44.13))*.5+.5;
-    eh = clamp(eh, 0., 1.)*po;
-    eh = smoothstep(.3+.3*v_diffuse2.y, .77, eh)*v_diffuse3.z;
-    gl_FragColor = vec4(vec3(v_diffuse1), eh);
+    float po = power(1. - abs(2.*(noisy_uv.y-.05)), 2.);
+    float eh = fbm3(vec3(v_uv.x*v_diffuse2.y * (3.+16.*v_diffuse2.y), v_uv.y*v_diffuse2.y * 188., 14.540+ v_diffuse2.x*244.13))*.5+.5;
+    eh = clamp(eh, 0., 1.);
+    eh = smoothstep(.3+.3*v_diffuse2.y*0., .8, eh)*v_diffuse3.z;
     // gl_FragColor = vec4(fract(noisy_uv.x), fract(noisy_uv.y), 0., 1.);
+    gl_FragColor = vec4(vec3(v_diffuse1)*po+(1.-po)*vec3(.8,.2,.2), pow(1.-po, .25));
+    gl_FragColor = vec4(vec3(v_diffuse1)*po+(1.-po)*vec3(.8,.8,.8), eh*po);
+    gl_FragColor = vec4(vec3(v_diffuse1), eh);
 
     float oo = 1.;
 

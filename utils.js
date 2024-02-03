@@ -22,10 +22,12 @@ export class Quad{
 }
 
 export class Vector{
-    constructor(x, y, z=0){
+    constructor(x, y, z=0, u=0, v=0){
         this.x = x;
         this.y = y;
         this.z = z;
+        this.u = u;
+        this.v = v;
     }
 
     add(vec){
@@ -58,7 +60,7 @@ export class Vector{
     }
 
     clone(){
-        return new Vector(this.x, this.y, this.z);
+        return new Vector(this.x, this.y, this.z, this.u, this.v);
     }
 
     heading(){

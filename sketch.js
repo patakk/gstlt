@@ -2,7 +2,7 @@
 import {getShaderSource, createShader, createProgram} from "./webglutils.js";
 import { Vector, Quad, noiseSeed, noise } from "./utils.js";
 import { makeBlueNoiseImage, poissonDiskSampling } from "./poisson.js"; 
-import { getPalette } from "./palette.js"; 
+import { getPalette, shuffle } from "./palette.js"; 
 
 let canvas;
 let gl;
@@ -83,24 +83,223 @@ function main() {
     gl.viewport(0, 0, REN, Math.round(REN/ASPECT));
 
     let numcurves = rand(5, 44);
-    // numcurves = 334;
+    numcurves = 33;
+
+    shuffle(palettes[0]);
 
 
     let aaa = DIM;
     let bbb = Math.floor(DIM / ASPECT);
     for (let k = 0; k < 3; k++) {
-        randomCenters.push(new Vector(rand(0, aaa), rand(0, bbb)));
+        // randomCenters.push(new Vector(rand(0, aaa), rand(0, bbb)));
     }
 
     for(let k = 0; k < numcurves; k++){
         setupCurves();
     }
+
+    // fixcurves();
+    twirl();
+    twirl();
+    twirl();
+    twirl();
+    twirl();
+    twirl();
+    twirl();
+    twirl();
+    twirl();
+    twirl();
+    twirl();
+    twirl();
+    twirl();
+    twirlz();
+    // fixcurves();
+
+    for (let i = 0; i < curves.length; i++) {
+        let curve = curves[i];
+        for (let i = 0; i < curve.length; i++) {
+            curve[i].u = map(curve[i].x, 0, aaa, 0, 1);
+            curve[i].v = map(curve[i].y, 0, bbb, 0, 1);
+        }
+    }
+
+    let minx = 999999;
+    let maxx = -999999;
+    let miny = 999999;
+    let maxy = -999999;
+    // find bounding box
+    for (let i = 0; i < curves.length; i++) {
+        let curve = curves[i];
+        for (let i = 0; i < curve.length; i++) {
+            let p = curve[i];
+            if (p.x < minx) minx = p.x;
+            if (p.x > maxx) maxx = p.x;
+            if (p.y < miny) miny = p.y;
+            if (p.y > maxy) maxy = p.y;
+        }
+    }
+    // fit to aaa and bbb dimensons
+    let margin = aaa*.15;
+    for (let i = 0; i < curves.length; i++) {
+        let curve = curves[i];
+        for (let i = 0; i < curve.length; i++) {
+            curve[i].x = map(curve[i].x, minx, maxx, margin, aaa-margin);
+            curve[i].y = map(curve[i].y, miny, maxy, margin, bbb-margin);
+        }
+    }
+
+
+
     // previewCurves()
     // createCurves();
     // constructCurves();
-    constructQuads();
+    constructQuads(17);
+
+    // curveslengths.push(4);
+    // addstripattribs(new Vector(300, 400), new Vector(770, 400), [0, 0], [0, 1], 0, new Vector(0, 0), 0.001, [1,0,0], [0,0,0], [0,0,0]);
+    // addstripattribs(new Vector(400, 490), new Vector(270, 790), [1, 0], [1, 1], 1, new Vector(0, 0), 0.001, [0,0,0], [0,0,0], [0,0,0]);
+    // addstripattribs(new Vector(300, 590), new Vector(770, 690), [2, 0], [2, 1], 2, new Vector(0, 0), 0.001, [0,0,0], [0,0,0], [0,0,0]);
+
+    finishupQuadInfo();
 
     render();
+}
+
+function finishupQuadInfo(){
+    quads = new Float32Array(quads);
+    uvs = new Float32Array(uvs);
+    infos = new Float32Array(infos);
+    angles = new Float32Array(angles);
+    diffuse1 = new Float32Array(diffuse1);
+    diffuse2 = new Float32Array(diffuse2);
+    diffuse3 = new Float32Array(diffuse3);
+
+    console.log('quads', quads.length);
+    console.log('uvs', uvs.length);
+    console.log('infos', infos.length);
+    console.log('angles', angles.length);
+    console.log('diffuse1', diffuse1.length);
+    console.log('diffuse2', diffuse2.length);
+    console.log('diffuse3', diffuse3.length);
+    console.log('baj')
+}
+
+function fixcurves(){
+    let aaa = DIM;
+    let bbb = Math.floor(DIM / ASPECT);
+    let margin = aaa*.003;
+    let center = new Vector(aaa * .5, bbb * .5);
+    for (let i = 0; i < curves.length; i++) {
+        let curve = curves[i];
+        // fixcurve
+        let width = 0;
+        let height = 0;
+        let maxwidth = aaa - margin * 2;
+        let maxheight = bbb - margin * 2;
+        let minx = 999999;
+        let maxx = -999999;
+        let miny = 999999;
+        let maxy = -999999;
+        for (let i = 0; i < curve.length; i++) {
+            let p = curve[i];
+            if (p.x < minx) minx = p.x;
+            if (p.x > maxx) maxx = p.x;
+            if (p.y < miny) miny = p.y;
+            if (p.y > maxy) maxy = p.y;
+        }
+        let middle = new Vector((minx + maxx) / 2, (miny + maxy) / 2);
+        width = maxx - minx;
+        height = maxy - miny;
+        let scx = width / maxwidth;
+        let scy = height / maxheight;
+        let sc = Math.max(scx, scy);
+        for (let i = 0; i < curve.length; i++) {
+            curve[i].sub(middle);
+        }
+        // scx = rand(1, scx)
+        // scy = rand(1, scy)
+        if (sc > -1 && rand(0,1) < 1.1) {
+            for (let i = 0; i < curve.length; i++) {
+                curve[i].x /= scx;
+                curve[i].y /= scy;
+                curve[i].add(center);
+            }
+        }
+    }
+}
+
+function twirl(){
+    let dir = rand(0, 1) > .5 ? 1 : -1;
+    let strength = rand(.3, 2.2);
+
+    let aaa = DIM;
+    let bbb = Math.floor(DIM / ASPECT);
+    let cx = aaa/2 + rand(-aaa/3, aaa/3);
+    let cy = bbb/2 + rand(-bbb/3, bbb/3);
+    let cz = 0;
+    let center;
+    let maxdist;
+
+    let dqq = rand(30, 300);
+    if(rand(0,1) < .5)
+        dqq = 1;
+
+    center = new Vector(cx, cy);
+    maxdist = Math.min(aaa,bbb)/3*rand(.5, 2);
+    for (let i = 0; i < curves.length; i++) {
+        let points = curves[i];
+        for (let j = 0; j < points.length; j++) {
+            let ccc = points[j].clone();
+            
+            let disttocenter = points[j].distance(center);
+            let angle = Math.atan2(points[j].y - center.y, points[j].x - center.x);
+            if(disttocenter < maxdist){
+                let t = Math.pow(1.-disttocenter/maxdist, 2);
+                let newangle = angle + t*Math.PI*dir*strength*(2.*power(noise(points[j].u, points[j].v, 0), 2)-1);
+                let newpos = new Vector(cx + Math.cos(newangle)*disttocenter, cy + Math.sin(newangle)*disttocenter);
+                curves[i][j] = newpos;
+                curves[i][j].u = ccc.u;
+                curves[i][j].v = ccc.v;
+            }
+        }
+    }
+
+}
+
+// twirl effect like in photoshop, around center
+function twirlz(){
+
+    let dir = rand(0, 1) > .5 ? 1 : -1;
+    let strength = rand(.3, 2.2);
+
+    let aaa = DIM;
+    let bbb = Math.floor(DIM / ASPECT);
+    let cx = aaa/2 + rand(-aaa/2, aaa/2);
+    let cy = bbb/2 + rand(-bbb/2, bbb/2);
+    let cz = 0;
+    let center;
+    let maxdist;
+
+    center = new Vector(cx, cy, 0);
+    maxdist = Math.min(aaa,bbb)/3*rand(.5, 2);
+    for (let i = 0; i < curves.length; i++) {
+        let points = curves[i];
+        for (let j = 0; j < points.length; j++) {
+            let ccc = points[j].clone();
+            let point3d = new Vector(cx, points[j].y, 0);
+            let disttocenter = point3d.distance(center);
+            let disttocenter2 = points[j].distance(center);
+            let angle = Math.atan2(point3d.y - center.y, point3d.z - center.z);
+            if(disttocenter2 < maxdist){
+                let t = Math.pow(1.-disttocenter2/maxdist, 3);
+                let newangle = angle + t*Math.PI*2.*strength;
+                let newpos = new Vector(points[j].x, cy + Math.sin(newangle)*disttocenter); //, cz + Math.sin(newangle)*disttocenter);
+                curves[i][j] = new Vector(newpos.x, newpos.y);
+                curves[i][j].u = ccc.u;
+                curves[i][j].v = ccc.v;
+            }
+        }
+    }
 }
 
 
@@ -131,7 +330,7 @@ function constructCurves(){
     let c2 = [rand(0, 1), .15, .5]; // used for fbm3
     let c3 = [rand(.8, 1), rand(.8, 1), rand(.8, 1)];
 
-    addquadpointstoattributes(quad.p1, quad.p2, quad.p3, quad.p4, [0, 0], [1, 0], [0, 1], [1, 1], coco++, quad.p1.clone(), 0, c1, c2, c3);
+    // addquadpointstoattributes(quad.p1, quad.p2, quad.p3, quad.p4, [0, 0], [1, 0], [0, 1], [1, 1], coco++, quad.p1.clone(), 0, c1, c2, c3);
 
     // averagepos.x = (minx + maxx)/2;
     // averagepos.y = (miny + maxy)/2;
@@ -140,17 +339,7 @@ function constructCurves(){
     // console.log(averagepos)
 
     console.log('total', coco);
-    // addquadpointstoattributes(p1, p2, p3, p4, [0, 0], [1, 0], [0, 1], [1, 1], 0, p1.clone(), 0, [1, 0, 0]);
-
-
-    quads = new Float32Array(quads);
-    uvs = new Float32Array(uvs);
-    infos = new Float32Array(infos);
-    angles = new Float32Array(angles);
-    diffuse1 = new Float32Array(diffuse1);
-    diffuse2 = new Float32Array(diffuse2);
-    diffuse3 = new Float32Array(diffuse3);
-    console.log('baj')
+    addquadpointstoattributes(p1, p2, p3, p4, [0, 0], [1, 0], [0, 1], [1, 1], 0, p1.clone(), 0, [1, 0, 0]);
 }
 
 function previewCurves(){
@@ -353,10 +542,11 @@ function render(){
     let chc = Math.floor(rand(0, 3));
     chc = 1;
     if(chc == 0){
-        gl.clearColor(0.051254902, 0.0512156863, 0.0510588235, 1.);
+        // gl.clearColor(0.051254902, 0.0512156863, 0.0510588235, 1.);
+        gl.clearColor(0.051254902, 0.051254902, 0.051254902, 1.);
     }
     else if(chc == 1){
-        gl.clearColor(0.9254902, 0.90, 0.85, 1.);
+        gl.clearColor(0.9254902, 0.9254902, 0.9254902, 1.);
     }
     else if(chc == 2){
         gl.clearColor(0.1254902, 0.11156863, 0.11588235, 1.);
@@ -433,7 +623,8 @@ function render(){
     gl.uniform1f(gl.getUniformLocation(bgProgram, "u_postproc"), POSTPROC);
     gl.uniform3f(gl.getUniformLocation(bgProgram, "u_margincolor"), 0.15, 0.15, 0.15);
 
-    let pp = palettes[7];
+    let pp = palettes[Math.floor(rand(0, palettes.length))];
+    // pp = palettes[7];
     let edgec = pp[Math.floor(rand(0, pp.length))];
     edgec = [1, .4, 0]
     // edgec = [0,0,0]
@@ -471,7 +662,7 @@ function clamp(x, a, b) {
 let palettes = getPalette().palettes;
 let curveslengths = [];
 
-function constructQuads() {
+function constructQuads(inthickness=5) {
 
 
     let aaa = DIM;
@@ -504,7 +695,7 @@ function constructQuads() {
     ]
 
     palette = palettes[Math.floor(rand(0, palettes.length))];
-    palette = palettes[8];
+    // palette = palettes[0];
     console.log('palette length', palette.length)
     let npalette = [];
     // for (let k = 0; k < palette.length; k++) {
@@ -535,7 +726,7 @@ function constructQuads() {
         // walks = rand(33, 200);
     }
 
-    let powp = 1;
+    let powp = 3;
     // if(rand(0, 1) > 1.5)
     //     powp = 7;
     for (let i = 0; i < curves.length; i++) {
@@ -545,10 +736,11 @@ function constructQuads() {
         let c2 = [rand(0, 1), .15, .5]; // used for fbm3
         let c3 = [rand(.7, 1), rand(.7, 1), rand(.7, 1)];
         let pidx = Math.floor(Math.pow(rand(0, 1), powp) * palette.length);
-        pidx = i%palette.length;
+        // pidx = Math.floor(power(noise(.0001*points[0].x, .0001*points[0].y), 3)*palette.length);
+        // pidx = i%palette.length;
         c1 = palette[pidx];
         // c1 = palette[(i)%palette.length];
-        if(rand(0,1) < 0.4){
+        if(rand(0,1) < 0.1){
             if (rand(0, 1) < 0.5) {
                 c1 = [0, 0, 0]
             }
@@ -556,20 +748,35 @@ function constructQuads() {
                 c1 = [1, 1, 1]
             }
         }
-        c1[0] = clamp(c1[0] + .05*rand(-.2, .2), 0, 1);
-        c1[1] = clamp(c1[1] + .05*rand(-.2, .2), 0, 1);
-        c1[2] = clamp(c1[2] + .05*rand(-.2, .2), 0, 1);
+        c1[0] = clamp(c1[0] + .05*0*rand(-.2, .2), 0, 1);
+        c1[1] = clamp(c1[1] + .05*0*rand(-.2, .2), 0, 1);
+        c1[2] = clamp(c1[2] + .05*0*rand(-.2, .2), 0, 1);
         stripeThickness = map(Math.pow(rand(0, 1), 3), 0, 1, 0, 50) * 2;
-        stripeThickness = map(i, 0, curves.length, 1, 0);
         stripeThickness = map(Math.pow(stripeThickness, 3), 0, 1, 20, 70);
         stripeThickness = rand(30,40);
+        stripeThickness = inthickness;
+        stripeThickness = map(i, 0, curves.length, 1, 0)*70;
+        // if(i < curves.length-40){
+        //     stripeThickness = 15;
+        // }
+        // else{
+        //     stripeThickness = 1;
+        // }
+        if(rand(0,1) < 0.015){
+            // stripeThickness = 15;
+        }
 
         for (let j = 0; j < points.length - 1; j++) {
             let op = map(j, points.length-4, points.length-1, 1, 0);
             op = clamp(op, 0.0, 1);
             // op = 1;
             c3 = [rand(.85,1), rand(.85,1), rand(.85,1)];
-            let stripeThicknesss = stripeThickness * ( 1 + 1.5*power(noise(j*.1, i+33), 4));
+            let stripeThicknesss = stripeThickness * ( 1 + (1.-j/points.length)*12.5*Math.pow(noise(j*.011, i+33), 2));
+            if(i < curves.length-40){
+                // stripeThickness = rand(4, 60);
+            }
+            else{
+            }
             let pt1 = points[j];
             let pt2 = points[j + 1];
             let dist = pt1.distance(pt2);
@@ -589,7 +796,28 @@ function constructQuads() {
                 let p1 = pos.add(right.multiplyScalar(stripeThicknesss)).clone();
                 let p2 = pos.add(left.multiplyScalar(stripeThicknesss)).clone();
                 
-                addstripattribs(p1, p2, [j, 0], [j, 1], coco++, new Vector(0, 0), angle, c1, c2, c3);
+                let c11 = c1.slice();
+                // if(i < curves.length-40){
+                // }
+                // else{
+                //     c11 = [1,1,1];
+                // }
+                // c11[0] = points[j].u;
+                // c11[1] = points[j].v;
+                // c11[2] = 0.0;
+                // c11[0] = c1[0]*(1.-.66*power(noise(points[j].u*1., points[j].v*1., 0.0), 5));
+                // c11[1] = c1[1]*(1.-.66*power(noise(points[j].u*1., points[j].v*1., 0.0), 5));
+                // c11[2] = c1[2]*(1.-.66*power(noise(points[j].u*1., points[j].v*1., 0.0), 5));
+                c11[0] = c1[0]*(1.-j/points.length);
+                c11[1] = c1[1]*(1.-j/points.length);
+                c11[2] = c1[2]*(1.-j/points.length);
+
+                addstripattribs(p1, p2, [j, 0], [j, 1], 0*coco++, new Vector(0, 0), angle, c11, c2, c3);
+                // c1 = [random(.6, 1.), 0, 0];
+                // if(rand(0,1) < 0.04){
+                //     c1 = [1, 1, 1]
+                // }
+                // addstripattribs(p1, p2, [j, 0], [j, 1], coco++, new Vector(0, 0), angle, c1, [0,1,0], [0,0,1]);
 
                 curveslengths[i] += 2;
              }
@@ -599,22 +827,6 @@ function constructQuads() {
 
     console.log('total', coco);
 
-    quads = new Float32Array(quads);
-    uvs = new Float32Array(uvs);
-    infos = new Float32Array(infos);
-    angles = new Float32Array(angles);
-    diffuse1 = new Float32Array(diffuse1);
-    diffuse2 = new Float32Array(diffuse2);
-    diffuse3 = new Float32Array(diffuse3);
-
-    console.log('quads', quads.length);
-    console.log('uvs', uvs.length);
-    console.log('infos', infos.length);
-    console.log('angles', angles.length);
-    console.log('diffuse1', diffuse1.length);
-    console.log('diffuse2', diffuse2.length);
-    console.log('diffuse3', diffuse3.length);
-    console.log('baj')
 }
 
 // class Quad {
@@ -747,11 +959,12 @@ function setupCurves(){
     let ctries = 0;
     let curve = [];
     let pathsteps = Math.round(rand(8, 13)) * 1;
-    // pathsteps = rand(3,4)*3;
+    
+    pathsteps = rand(3,4)*1;
 
     let aaa = DIM;
     let bbb = Math.floor(DIM/ASPECT);
-    let margin = aaa*.0372;
+    let margin = aaa*.000;
     let numangles = 114;
     numangles = rand(5, 100);
     numangles = rand(2, 6);
@@ -827,24 +1040,27 @@ function setupCurves(){
         let p1 = curve[i];
         let p2 = curve[i+1];
         let dist = p1.distance(p2);
-        let parts = Math.floor(dist/60 + 2);
+        let parts = Math.floor(dist/11 + 2);
         for(let j = 0; j < parts; j++){
             let p = new Vector(p1.x + (p2.x-p1.x)*j/parts, p1.y + (p2.y-p1.y)*j/parts);
+            // p.add(new Vector(rand(-5,5), rand(-5,5)))
+            p.u = map(p.x, 0, aaa, 0, 1);
+            p.v = map(p.y, 0, bbb, 0, 1);
             newcurve.push(p);
         }
     }
     curve = newcurve;
 
     // smoothen curve
-    if(rand(0,1) < .5){
+    if(rand(0,1) < 1.5){
         let newcurve2 = [];
         let lele = rand(2, 10);
-        lele = 9;
-        for (let i = 0; i < curve.length-10; i++){
+        lele = 14;
+        for (let i = 0; i < curve.length-15; i++){
             let p = new Vector(0, 0);
-            if(rand(0,1) < .01)
-                lele = rand(1,3);
-            lele = 9;
+            // if(rand(0,1) < .01)
+            //     lele = rand(1,3);
+            lele = 14;
 
             if(lele > 0){
                 for (let j = 0; j < lele; j++) {
@@ -858,44 +1074,6 @@ function setupCurves(){
             newcurve2.push(p);
         }
         curve = newcurve2;
-    }
-
-    // fixcurve
-    let center = new Vector(aaa * .5, bbb * .5);
-    let width = 0;
-    let height = 0;
-    let maxwidth = aaa - margin * 2;
-    let maxheight = bbb - margin * 2;
-    let minx = 999999;
-    let maxx = -999999;
-    let miny = 999999;
-    let maxy = -999999;
-    for (let i = 0; i < curve.length; i++) {
-        let p = curve[i];
-        if (p.x < minx) minx = p.x;
-        if (p.x > maxx) maxx = p.x;
-        if (p.y < miny) miny = p.y;
-        if (p.y > maxy) maxy = p.y;
-    }
-    let middle = new Vector((minx + maxx) / 2, (miny + maxy) / 2);
-    width = maxx - minx;
-    height = maxy - miny;
-    let scx = width / maxwidth;
-    let scy = height / maxheight;
-    let sc = Math.max(scx, scy);
-    for (let i = 0; i < curve.length; i++) {
-        curve[i].sub(middle);
-    }
-    // scx = rand(1, scx)
-    // scy = rand(1, scy)
-    if (sc > -1 && rand(0,1) < 1.1) {
-        for (let i = 0; i < curve.length; i++) {
-            curve[i].x /= scx;
-            curve[i].y /= scy;
-        }
-    }
-    for (let i = 0; i < curve.length; i++) {
-        curve[i].add(center);
     }
 
     // let mind0 = 800;

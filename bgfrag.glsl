@@ -230,8 +230,8 @@ void main() {
     float rey = hash12(vec2(v_uv.x*31.21 + u_seed.x+22.33, v_uv.y*231.1 + u_seed.x+41.12));
     qv_uv = v_uv.xy + hash12(vec2(39.*v_uv.x+rex, 39.*v_uv.y+rey))*.001*1.;
 
-    vec3 color0 = texture2D(u_texture, v_uv).rgb;
-    vec3 color = texture2D(u_texture, qv_uv).rgb;
+    vec3 color = texture2D(u_texture, v_uv).rgb;
+    vec3 color0 = texture2D(u_texture, qv_uv).rgb;
     // vec3 qcolor = texture2D(u_texture, qv_uv).rgb;
 
 
@@ -266,7 +266,7 @@ void main() {
     //     result = vec3(.15);
     //     result = vec3(u_margincolor);
     // }
-    if(u_postproc > 0.9){
+    if(u_postproc > .9){
         result = result + .096*(-.5 + salt);
         // vec3 bluenosie = texture2D(u_bluenoiseTexture, mod(gl_FragCoord.xy/u_bluenoiseTextureSize + u_seed.rg*12.31, 1.)*.495).rgb;
         // vec3 blueblured = blur3(qv_uv, u_resolution, 1., .1);
@@ -297,5 +297,6 @@ void main() {
     // result = mix(result, u_edgecolor, .4*smoothstep(.1, .2, edges));
 
     gl_FragColor = vec4(vec3(result.rgb), 1.);
+    // gl_FragColor = vec4(vec3(color0.rgb), 1.);
     
 }
