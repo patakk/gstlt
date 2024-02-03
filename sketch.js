@@ -83,7 +83,7 @@ function main() {
     gl.viewport(0, 0, REN, Math.round(REN/ASPECT));
 
     let numcurves = rand(5, 44);
-    numcurves = 33;
+    numcurves = 3;
 
     shuffle(palettes[0]);
 
@@ -106,14 +106,8 @@ function main() {
     twirl();
     twirl();
     twirl();
-    twirl();
-    twirl();
-    twirl();
-    twirl();
-    twirl();
-    twirl();
     twirlz();
-    // fixcurves();
+    fixcurves();
 
     for (let i = 0; i < curves.length; i++) {
         let curve = curves[i];
@@ -139,7 +133,7 @@ function main() {
         }
     }
     // fit to aaa and bbb dimensons
-    let margin = aaa*.15;
+    let margin = aaa*.1;
     for (let i = 0; i < curves.length; i++) {
         let curve = curves[i];
         for (let i = 0; i < curve.length; i++) {
@@ -231,6 +225,7 @@ function fixcurves(){
 function twirl(){
     let dir = rand(0, 1) > .5 ? 1 : -1;
     let strength = rand(.3, 2.2);
+    // strength = 2.3;
 
     let aaa = DIM;
     let bbb = Math.floor(DIM / ASPECT);
@@ -262,6 +257,23 @@ function twirl(){
                 curves[i][j].v = ccc.v;
             }
         }
+
+        // let newcurve = [];
+        // for(let j = 0; j < curves[i].length-1; j++){
+        //     let p1 = curves[i][j];
+        //     let p2 = curves[i][j+1];
+        //     let dist = p1.distance(p2);
+        //     let parts = Math.max(1, Math.floor(dist/11));
+        //     for(let k = 0; k < parts; k++){
+        //         let p = new Vector(p1.x + (p2.x-p1.x)*k/parts, p1.y + (p2.y-p1.y)*k/parts);
+        //         // p.add(new Vector(rand(-5,5), rand(-5,5)))
+        //         p.u = map(p.x, 0, aaa, 0, 1);
+        //         p.v = map(p.y, 0, bbb, 0, 1);
+        //         newcurve.push(p);
+        //     }
+        // }
+        // curves[i] = newcurve;
+
     }
 
 }
@@ -755,7 +767,7 @@ function constructQuads(inthickness=5) {
         stripeThickness = map(Math.pow(stripeThickness, 3), 0, 1, 20, 70);
         stripeThickness = rand(30,40);
         stripeThickness = inthickness;
-        stripeThickness = map(i, 0, curves.length, 1, 0)*70;
+        stripeThickness = map(i, 0, curves.length, 1, 0)*99;
         // if(i < curves.length-40){
         //     stripeThickness = 15;
         // }
@@ -766,6 +778,7 @@ function constructQuads(inthickness=5) {
             // stripeThickness = 15;
         }
 
+        let length = 0;
         for (let j = 0; j < points.length - 1; j++) {
             let op = map(j, points.length-4, points.length-1, 1, 0);
             op = clamp(op, 0.0, 1);
@@ -782,6 +795,7 @@ function constructQuads(inthickness=5) {
             let dist = pt1.distance(pt2);
             let parts = dist / 40;
             parts = 1;
+            length += dist/1000.;
             for (let k = 0; k < parts; k++) {
                 let t = k / parts;
                 let x = t * pt1.x + (1 - t) * pt2.x;
@@ -805,14 +819,15 @@ function constructQuads(inthickness=5) {
                 // c11[0] = points[j].u;
                 // c11[1] = points[j].v;
                 // c11[2] = 0.0;
-                // c11[0] = c1[0]*(1.-.66*power(noise(points[j].u*1., points[j].v*1., 0.0), 5));
-                // c11[1] = c1[1]*(1.-.66*power(noise(points[j].u*1., points[j].v*1., 0.0), 5));
-                // c11[2] = c1[2]*(1.-.66*power(noise(points[j].u*1., points[j].v*1., 0.0), 5));
-                c11[0] = c1[0]*(1.-j/points.length);
-                c11[1] = c1[1]*(1.-j/points.length);
-                c11[2] = c1[2]*(1.-j/points.length);
+                // c11[0] = c1[0]*(1.-.66*power(noise(points[j].u*11., points[j].v*11., 0.0), 5));
+                // c11[1] = c1[1]*(1.-.66*power(noise(points[j].u*11., points[j].v*11., 0.0), 5));
+                // c11[2] = c1[2]*(1.-.66*power(noise(points[j].u*11., points[j].v*11., 0.0), 5));
+                // c11[0] = c1[0]*(1.-j/points.length);
+                // c11[1] = c1[1]*(1.-j/points.length);
+                // c11[2] = c1[2]*(1.-j/points.length);
 
-                addstripattribs(p1, p2, [j, 0], [j, 1], 0*coco++, new Vector(0, 0), angle, c11, c2, c3);
+                //addstripattribs(p1, p2, [j, 0], [j, 1], 0*coco++, new Vector(0, 0), angle, c11, c2, c3);
+                addstripattribs(p1, p2, [length, 0], [length, 1], 0*coco++, new Vector(0, 0), angle, c11, c2, c3);
                 // c1 = [random(.6, 1.), 0, 0];
                 // if(rand(0,1) < 0.04){
                 //     c1 = [1, 1, 1]
@@ -1109,6 +1124,9 @@ function setupCurves(){
     // curve = roundq(curve);
 
     curves.push(curve);
+}
+
+function subdivide(){
 }
 
 function hsvToRgb(h, s, v) {
