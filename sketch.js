@@ -83,7 +83,7 @@ function main() {
     gl.viewport(0, 0, REN, Math.round(REN/ASPECT));
 
     let numcurves = rand(5, 44);
-    numcurves = 34;
+    numcurves = 66;
 
     shuffle(palettes[0]);
 
@@ -98,8 +98,8 @@ function main() {
         setupCurves();
     }
 
-    fixcurves();
-    for(let k = 0; k < 3; k++){
+    //fixcurves();
+    for(let k = 0; k < 13; k++){
         twirl();
     }
     // twirlz();

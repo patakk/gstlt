@@ -281,8 +281,8 @@ void main() {
     gl_FragColor = vec4((vec3(.93)*po+(1.-po)*vec3(.93,.93,.93))*smoothstep(0.04,0.05,v_uv.y), eh);
     gl_FragColor = vec4(vec3(v_diffuse1), eh*(.5+.5*sin(v_uv.x*1333.*v_diffuse1.r)));
     gl_FragColor = vec4(vec3(v_diffuse1)*po+(1.-po)*vec3(0.1,.2,.8), eh);
-    gl_FragColor = vec4(vec3(v_diffuse1), eh);
     gl_FragColor = vec4(vec3(v_diffuse1)*po+(1.-po)*vec3(0.99,.3,.0), eh);
+    gl_FragColor = vec4(vec3(v_diffuse1), .6+.4*eh);
 
     // if(v_uv.x > .1 && v_uv.x < .9 && v_uv.y > .0 && v_uv.y < .9){
     //     oo = 0.;
