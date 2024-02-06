@@ -83,7 +83,7 @@ function main() {
     gl.viewport(0, 0, REN, Math.round(REN/ASPECT));
 
     let numcurves = rand(5, 44);
-    numcurves = 3;
+    numcurves = 34;
 
     shuffle(palettes[0]);
 
@@ -98,16 +98,12 @@ function main() {
         setupCurves();
     }
 
-    // fixcurves();
-    twirl();
-    twirl();
-    twirl();
-    twirl();
-    twirl();
-    twirl();
-    twirl();
-    twirlz();
     fixcurves();
+    for(let k = 0; k < 3; k++){
+        twirl();
+    }
+    // twirlz();
+    // fixcurves();
 
     for (let i = 0; i < curves.length; i++) {
         let curve = curves[i];
@@ -133,7 +129,7 @@ function main() {
         }
     }
     // fit to aaa and bbb dimensons
-    let margin = aaa*.1;
+    let margin = aaa*.13;
     for (let i = 0; i < curves.length; i++) {
         let curve = curves[i];
         for (let i = 0; i < curve.length; i++) {
@@ -240,7 +236,7 @@ function twirl(){
         dqq = 1;
 
     center = new Vector(cx, cy);
-    maxdist = Math.min(aaa,bbb)/3*rand(.5, 2);
+    maxdist = Math.min(aaa,bbb)/3*rand(2.5, 3);
     for (let i = 0; i < curves.length; i++) {
         let points = curves[i];
         for (let j = 0; j < points.length; j++) {
@@ -767,7 +763,8 @@ function constructQuads(inthickness=5) {
         stripeThickness = map(Math.pow(stripeThickness, 3), 0, 1, 20, 70);
         stripeThickness = rand(30,40);
         stripeThickness = inthickness;
-        stripeThickness = map(i, 0, curves.length, 1, 0)*99;
+        stripeThickness = rand(11,12);
+        stripeThickness = 8+Math.pow(map(i, 0, curves.length, 1, 0), 3.)*66;
         // if(i < curves.length-40){
         //     stripeThickness = 15;
         // }
@@ -822,6 +819,9 @@ function constructQuads(inthickness=5) {
                 // c11[0] = c1[0]*(1.-.66*power(noise(points[j].u*11., points[j].v*11., 0.0), 5));
                 // c11[1] = c1[1]*(1.-.66*power(noise(points[j].u*11., points[j].v*11., 0.0), 5));
                 // c11[2] = c1[2]*(1.-.66*power(noise(points[j].u*11., points[j].v*11., 0.0), 5));
+                c11[0] = c1[0] + .4*(-.5 + power(noise(points[j].u*0.+i, points[j].v*0.+i, 0.0), 5));
+                c11[1] = c1[1] + .4*(-.5 + power(noise(points[j].u*0.+i, points[j].v*0.+i, 0.0), 5));
+                c11[2] = c1[2] + .4*(-.5 + power(noise(points[j].u*0.+i, points[j].v*0.+i, 0.0), 5));
                 // c11[0] = c1[0]*(1.-j/points.length);
                 // c11[1] = c1[1]*(1.-j/points.length);
                 // c11[2] = c1[2]*(1.-j/points.length);
