@@ -5,6 +5,8 @@ import { makeBlueNoiseImage, poissonDiskSampling } from "./poisson.js";
 import { getPalette, shuffle } from "./palette.js"; 
 
 let canvas;
+let debugCanvas;
+let debugCtx;
 let gl;
 
 let curves = [];
@@ -41,9 +43,30 @@ if(search.has('debug')){
         DEBUG = true;
 }
 
+function setupFace(){
+    let pA = new Vector(rand(.4, .6), rand(.23, .26));
+    let pB1 = new Vector(.23, .5);
+    let pB2 = new Vector(.77, .5);
+
+    if(DEBUG){
+        debugCtx.lineWidth = 4;
+        debugCtx.beginPath();
+        debugCtx.strokeStyle = "red";
+        debugCtx.arc(pA.x*REN, pA.y*REN, 33, 0, Math.PI * 2);
+        debugCtx.stroke();
+        debugCtx.beginPath();
+        debugCtx.strokeStyle = "blue";
+        debugCtx.arc(pB1.x*REN, pB1.y*REN, 33, 0, Math.PI * 2);
+        debugCtx.stroke();
+        debugCtx.beginPath();
+        debugCtx.strokeStyle = "green";
+        debugCtx.arc(pB2.x*REN, pB2.y*REN, 33, 0, Math.PI * 2);
+        debugCtx.stroke();  
+    }
+}
+
 
 function main() {
-    
     // updateURLParameter('hash', btoa(JSON.stringify({"hash": hash, "aspect": Math.round(aaspect*10000)/10000, 'version': vversion})).toString('base64'));
 
     noiseSeed(Math.floor(prng.rand()*10000));
@@ -60,8 +83,8 @@ function main() {
     
     SCALE = 1;
     //ASPECT = aspects[Math.floor(prng.rand()*aspects.length)];
-    ASPECT = 3 / 4;
-    VERSION = 0;
+    ASPECT = 4 / 5;
+    VERSION = Math.floor(prng.rand() * 3);
 
     EDGE_OFFSET = 50;
     if(ASPECT >= 1)
@@ -73,6 +96,21 @@ function main() {
 
     if(!canvas)
         canvas = document.getElementById("canvas");
+    
+    if(!debugCanvas && DEBUG){
+        debugCanvas = document.createElement('canvas');
+        debugCanvas.id = 'debugCanvas';
+        debugCanvas.width = 900; // Set your desired width
+        debugCanvas.height = 900/ASPECT; // Set your desired height
+        debugCanvas.style.position = 'absolute';
+        // set debugCanvas style left the same as computed canvas lefet
+        debugCanvas.style.top = '0px';
+        debugCanvas.style.pointerEvents = 'none'; // Make it non-interactive
+        document.body.appendChild(debugCanvas);
+        debugCtx = debugCanvas.getContext('2d');
+        debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
+    }
+
     onresize(null);
     if(!gl)
         gl = canvas.getContext('webgl2', {preserveDrawingBuffer: true, antialias: true, depth: true});
@@ -83,7 +121,7 @@ function main() {
     gl.viewport(0, 0, REN, Math.round(REN/ASPECT));
 
     let numcurves = rand(5, 44);
-    numcurves = 66;
+    numcurves = 33;
 
     shuffle(palettes[0]);
 
@@ -91,19 +129,21 @@ function main() {
     let aaa = DIM;
     let bbb = Math.floor(DIM / ASPECT);
     for (let k = 0; k < 3; k++) {
-        // randomCenters.push(new Vector(rand(0, aaa), rand(0, bbb)));
+        randomCenters.push(new Vector(rand(0, aaa), rand(0, bbb)));
     }
 
+    // setupFace();
     for(let k = 0; k < numcurves; k++){
-        setupCurves();
+       setupCurve(k/numcurves);
     }
 
-    //fixcurves();
-    for(let k = 0; k < 13; k++){
-        twirl();
+   //  fixcurves();
+    for(let k = 0; k < 22; k++){
+        twirl(k/22, k > 11);
     }
-    // twirlz();
-    // fixcurves();
+    //  fixcurves();
+    prng = Random(hash);
+    random = prng.rand;
 
     for (let i = 0; i < curves.length; i++) {
         let curve = curves[i];
@@ -120,6 +160,8 @@ function main() {
     // find bounding box
     for (let i = 0; i < curves.length; i++) {
         let curve = curves[i];
+        // if(curve.thickness < 10)
+        //     continue
         for (let i = 0; i < curve.length; i++) {
             let p = curve[i];
             if (p.x < minx) minx = p.x;
@@ -129,18 +171,29 @@ function main() {
         }
     }
     // fit to aaa and bbb dimensons
-    let margin = aaa*.13;
+    let margin = aaa*.1;
+    let pvx = prng.rand() > .5 ? 1 : rand(.5, 4);
+    let pvy = prng.rand() > .5 ? 1 : rand(1, 4);
     for (let i = 0; i < curves.length; i++) {
         let curve = curves[i];
         for (let i = 0; i < curve.length; i++) {
-            curve[i].x = map(curve[i].x, minx, maxx, margin, aaa-margin);
-            curve[i].y = map(curve[i].y, miny, maxy, margin, bbb-margin);
+            let ppx = map(curve[i].x, minx, maxx, 0, 1);
+            let ppy = map(curve[i].y, miny, maxy, 0, 1);
+            if(i < curves.length/2){
+                curve[i].x = map(power(ppx, pvx), 0, 1, margin, aaa-margin);
+                curve[i].y = map(power(ppy, pvy), 0, 1, margin, bbb-margin);
+            }
+            else{
+                curve[i].x = map(power(ppx, 1), 0, 1, margin, aaa-margin);
+                curve[i].y = map(power(ppy, 1), 0, 1, margin, bbb-margin);
+            }
         }
     }
 
 
 
     // previewCurves()
+    
     // createCurves();
     // constructCurves();
     constructQuads(17);
@@ -153,6 +206,12 @@ function main() {
     finishupQuadInfo();
 
     render();
+    if(DEBUG){
+        debugCanvas.style.left = window.getComputedStyle(canvas).left;
+        debugCanvas.style.top = window.getComputedStyle(canvas).top;
+        debugCanvas.style.width = window.getComputedStyle(canvas).width;
+        debugCanvas.style.height = window.getComputedStyle(canvas).height;
+    }
 }
 
 function finishupQuadInfo(){
@@ -218,10 +277,9 @@ function fixcurves(){
     }
 }
 
-function twirl(){
+function twirl(percent, subdivide=false){
     let dir = rand(0, 1) > .5 ? 1 : -1;
-    let strength = rand(.3, 2.2);
-    // strength = 2.3;
+    let strength = rand(.6, .7);
 
     let aaa = DIM;
     let bbb = Math.floor(DIM / ASPECT);
@@ -236,7 +294,23 @@ function twirl(){
         dqq = 1;
 
     center = new Vector(cx, cy);
-    maxdist = Math.min(aaa,bbb)/3*rand(2.5, 3);
+    // maxdist = Math.min(aaa,bbb)/3*rand(1.25-percent, 2-percent);
+    maxdist = Math.min(aaa,bbb)/3*rand(1.4, 2);
+
+    if(DEBUG){
+        let dx = map(cx, 0, aaa, 0, debugCanvas.width);
+        let dy = map(cy, 0, bbb, debugCanvas.height, 0);
+        let dmaxdist = map(maxdist, 0, aaa, 0, debugCanvas.width);
+        let size = 4;
+        debugCtx.strokeStyle = "black";
+        debugCtx.lineWidth = 4;
+        debugCtx.beginPath();
+        debugCtx.arc((dx-debugCanvas.width/2)*.9999+debugCanvas.width/2, (dy-debugCanvas.height/2)*.9999+debugCanvas.height/2, dmaxdist/4*strength, 0, Math.PI * 2);
+        debugCtx.stroke();
+    }
+
+    let twfrq = 3.;
+    let smuvec = new Vector(1, 0);
     for (let i = 0; i < curves.length; i++) {
         let points = curves[i];
         for (let j = 0; j < points.length; j++) {
@@ -244,31 +318,36 @@ function twirl(){
             
             let disttocenter = points[j].distance(center);
             let angle = Math.atan2(points[j].y - center.y, points[j].x - center.x);
+            // let ddot = Math.pow(.5 + .5*points[j].clone().sub(center).normalize().dot(smuvec), 4);
             if(disttocenter < maxdist){
                 let t = Math.pow(1.-disttocenter/maxdist, 2);
-                let newangle = angle + t*Math.PI*dir*strength*(2.*power(noise(points[j].u, points[j].v, 0), 2)-1);
+                let newangle = angle + t*Math.PI*dir*strength*(1.+2.*power(noise(points[j].u*twfrq, points[j].v*twfrq, 0), 4));
                 let newpos = new Vector(cx + Math.cos(newangle)*disttocenter, cy + Math.sin(newangle)*disttocenter);
                 curves[i][j] = newpos;
                 curves[i][j].u = ccc.u;
                 curves[i][j].v = ccc.v;
             }
         }
-
-        // let newcurve = [];
-        // for(let j = 0; j < curves[i].length-1; j++){
-        //     let p1 = curves[i][j];
-        //     let p2 = curves[i][j+1];
-        //     let dist = p1.distance(p2);
-        //     let parts = Math.max(1, Math.floor(dist/11));
-        //     for(let k = 0; k < parts; k++){
-        //         let p = new Vector(p1.x + (p2.x-p1.x)*k/parts, p1.y + (p2.y-p1.y)*k/parts);
-        //         // p.add(new Vector(rand(-5,5), rand(-5,5)))
-        //         p.u = map(p.x, 0, aaa, 0, 1);
-        //         p.v = map(p.y, 0, bbb, 0, 1);
-        //         newcurve.push(p);
-        //     }
-        // }
-        // curves[i] = newcurve;
+        // subdivision
+        if(subdivide){
+            let newcurve = [];
+            for(let j = 0; j < curves[i].length-1; j++){
+                let p1 = curves[i][j];
+                let p2 = curves[i][j+1];
+                let dist = p1.distance(p2);
+                let parts = Math.max(1, Math.floor(dist/22));
+                for(let k = 0; k < parts; k++){
+                    let p = new Vector(p1.x + (p2.x-p1.x)*k/parts, p1.y + (p2.y-p1.y)*k/parts);
+                    // p.add(new Vector(rand(-5,5), rand(-5,5)))
+                    p.u = map(p.x, 0, aaa, 0, 1);
+                    p.v = map(p.y, 0, bbb, 0, 1);
+                    newcurve.push(p);
+                }
+                // newcurve.push(p1);
+            }
+            newcurve.thickness = curves[i].thickness;
+            curves[i] = newcurve;
+        }
 
     }
 
@@ -288,8 +367,11 @@ function twirlz(){
     let center;
     let maxdist;
 
+    let ooox = rand(-200, 200)*13;
+    let oooy = rand(-200, 200)*13;
+
     center = new Vector(cx, cy, 0);
-    maxdist = Math.min(aaa,bbb)/3*rand(.5, 2);
+    maxdist = Math.min(aaa,bbb)/3*2;
     for (let i = 0; i < curves.length; i++) {
         let points = curves[i];
         for (let j = 0; j < points.length; j++) {
@@ -299,9 +381,9 @@ function twirlz(){
             let disttocenter2 = points[j].distance(center);
             let angle = Math.atan2(point3d.y - center.y, point3d.z - center.z);
             if(disttocenter2 < maxdist){
-                let t = Math.pow(1.-disttocenter2/maxdist, 3);
+                let t = Math.pow(1.-disttocenter2/maxdist, 1);
                 let newangle = angle + t*Math.PI*2.*strength;
-                let newpos = new Vector(points[j].x, cy + Math.sin(newangle)*disttocenter); //, cz + Math.sin(newangle)*disttocenter);
+                let newpos = new Vector(points[j].x+ooox*t, cy + Math.sin(newangle)*disttocenter+oooy*t); //, cz + Math.sin(newangle)*disttocenter);
                 curves[i][j] = new Vector(newpos.x, newpos.y);
                 curves[i][j].u = ccc.u;
                 curves[i][j].v = ccc.v;
@@ -351,7 +433,9 @@ function constructCurves(){
 }
 
 function previewCurves(){
-    let debugcanvas = document.getElementById("debugcanvas");
+    let debugcanvas;
+    if(!debugcanvas)
+        debugcanvas = document.getElementById("debugcanvas");
     debugcanvas.width = REN;
     debugcanvas.height = Math.round(REN/ASPECT);
     
@@ -560,6 +644,10 @@ function render(){
         gl.clearColor(0.1254902, 0.11156863, 0.11588235, 1.);
         // gl.clearColor(1. - 0.9, 1. - 0.75, 1. - 0.64, 1.);
     }
+    let pp = palettes[Math.floor(rand(0, palettes.length))];
+    let edgec = pp[Math.floor(rand(0, pp.length))];
+    // gl.clearColor(edgec[0], edgec[1], edgec[2], 1.);
+    gl.clearColor(1., 1., 1., 1.);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     let numQuads = quads.length / 8;
@@ -631,9 +719,9 @@ function render(){
     gl.uniform1f(gl.getUniformLocation(bgProgram, "u_postproc"), POSTPROC);
     gl.uniform3f(gl.getUniformLocation(bgProgram, "u_margincolor"), 0.15, 0.15, 0.15);
 
-    let pp = palettes[Math.floor(rand(0, palettes.length))];
+    pp = palettes[Math.floor(rand(0, palettes.length))];
     // pp = palettes[7];
-    let edgec = pp[Math.floor(rand(0, pp.length))];
+    edgec = pp[Math.floor(rand(0, pp.length))];
     edgec = [1, .4, 0]
     // edgec = [0,0,0]
 
@@ -734,7 +822,7 @@ function constructQuads(inthickness=5) {
         // walks = rand(33, 200);
     }
 
-    let powp = 3;
+    let powp = .4;
     // if(rand(0, 1) > 1.5)
     //     powp = 7;
     for (let i = 0; i < curves.length; i++) {
@@ -743,10 +831,10 @@ function constructQuads(inthickness=5) {
         let c1 = [rand(.3, 1), rand(.3, 1), rand(.3, 1)];
         let c2 = [rand(0, 1), .15, .5]; // used for fbm3
         let c3 = [rand(.7, 1), rand(.7, 1), rand(.7, 1)];
-        let pidx = Math.floor(Math.pow(rand(0, 1), powp) * palette.length);
+        let pidx = 123.*Math.floor(Math.pow(rand(0, 1), powp) * palette.length);
         // pidx = Math.floor(power(noise(.0001*points[0].x, .0001*points[0].y), 3)*palette.length);
         // pidx = i%palette.length;
-        c1 = palette[pidx];
+        c1 = palette[pidx%palette.length];
         // c1 = palette[(i)%palette.length];
         if(rand(0,1) < 0.1){
             if (rand(0, 1) < 0.5) {
@@ -764,7 +852,10 @@ function constructQuads(inthickness=5) {
         stripeThickness = rand(30,40);
         stripeThickness = inthickness;
         stripeThickness = rand(11,12);
-        stripeThickness = 8+Math.pow(map(i, 0, curves.length, 1, 0), 3.)*66;
+        stripeThickness = 3+Math.pow(map(i, 0, curves.length, 1, 0), 3.)*66;
+        stripeThickness = curves[i].thickness;
+        //if(i == 0)
+        //    stripeThickness = 250;
         // if(i < curves.length-40){
         //     stripeThickness = 15;
         // }
@@ -819,9 +910,9 @@ function constructQuads(inthickness=5) {
                 // c11[0] = c1[0]*(1.-.66*power(noise(points[j].u*11., points[j].v*11., 0.0), 5));
                 // c11[1] = c1[1]*(1.-.66*power(noise(points[j].u*11., points[j].v*11., 0.0), 5));
                 // c11[2] = c1[2]*(1.-.66*power(noise(points[j].u*11., points[j].v*11., 0.0), 5));
-                c11[0] = c1[0] + .4*(-.5 + power(noise(points[j].u*0.+i, points[j].v*0.+i, 0.0), 5));
-                c11[1] = c1[1] + .4*(-.5 + power(noise(points[j].u*0.+i, points[j].v*0.+i, 0.0), 5));
-                c11[2] = c1[2] + .4*(-.5 + power(noise(points[j].u*0.+i, points[j].v*0.+i, 0.0), 5));
+                // c11[0] = c1[0] + .6*(-.5 + power(noise(points[j].u*0.+i, points[j].v*0.+i, 0.0), 5));
+                // c11[1] = c1[1] + .6*(-.5 + power(noise(points[j].u*0.+i, points[j].v*0.+i, 0.0), 5));
+                // c11[2] = c1[2] + .6*(-.5 + power(noise(points[j].u*0.+i, points[j].v*0.+i, 0.0), 5));
                 // c11[0] = c1[0]*(1.-j/points.length);
                 // c11[1] = c1[1]*(1.-j/points.length);
                 // c11[2] = c1[2]*(1.-j/points.length);
@@ -968,7 +1059,7 @@ function intersects(point, curve){
     return false;
 }
 
-function setupCurves(){
+function setupCurve(percent){
 
     let success = false;
     let ctries = 0;
@@ -982,14 +1073,15 @@ function setupCurves(){
     let margin = aaa*.000;
     let numangles = 114;
     numangles = rand(5, 100);
-    numangles = rand(2, 6);
-    if(rand(0,1) < .5)
+    numangles = rand(2, 3);
+    if(rand(0,1) < .15)
         numangles = rand(40, 60);
-    // numangles = 2;
 
     while(!success && ctries++ < 10){
         let pos = new Vector(aaa/2 + rand(-666, 666), bbb/2 + rand(-666, 666));
+        // pos = new Vector(aaa/2 + 600*(-1+2*noise(percent, percent+21391.)), bbb/2 + 600*(-1+2*noise(percent+1311, percent+33.)));
         let direction0 = new Vector(rand(-1, 1), rand(-1, 1));
+        // let direction0 = new Vector(-1+2*noise(percent, percent+5651.), -1+2*noise(percent, percent+8865.));
         direction0.normalize();
 
         curve = [];
@@ -998,12 +1090,13 @@ function setupCurves(){
         let prevangle = 100000;
         for(let i = 0; i < pathsteps; i++){
             let direction = direction0.clone();
-            direction.rotate(map(power(rand(0, 1), 3), 0, 1, Math.PI/2, Math.PI*3/2));
+            direction.rotate(map(power(rand(0, 1), 1), 0, 1, Math.PI/2, Math.PI*3/2)*.1);
+            // direction.rotate(map(power(noise(percent, percent+21391.+i*.1), 1), 0, 1, Math.PI/2, Math.PI*3/2)*.1);
             let hhding = direction.heading();
             hhding = Math.round(hhding/(Math.PI/numangles))*(Math.PI/numangles);
             direction = new Vector(Math.cos(hhding), Math.sin(hhding));
             direction.normalize();
-            // direction.multiplyScalar(SCALE*rand(100, 366));
+            direction.multiplyScalar(SCALE*rand(100, 366)*.01);
             // if(i%2 == 0){
             //     direction.multiplyScalar(SCALE*rand(100, 110));
             // }
@@ -1035,6 +1128,7 @@ function setupCurves(){
             pos = newPos;
             curve.push(newPos);
         }
+        // curve.push(new Vector(aaa/2 + rand(-666, 666), bbb/2 + rand(-666, 666)));
         
         success = true;
         // for(let i = 0; i < curve.length; i++){
@@ -1055,7 +1149,7 @@ function setupCurves(){
         let p1 = curve[i];
         let p2 = curve[i+1];
         let dist = p1.distance(p2);
-        let parts = Math.floor(dist/11 + 2);
+        let parts = Math.floor(dist/22 + 2);
         for(let j = 0; j < parts; j++){
             let p = new Vector(p1.x + (p2.x-p1.x)*j/parts, p1.y + (p2.y-p1.y)*j/parts);
             // p.add(new Vector(rand(-5,5), rand(-5,5)))
@@ -1091,30 +1185,30 @@ function setupCurves(){
         curve = newcurve2;
     }
 
-    // let mind0 = 800;
-    // for (let i = 0; i < curve.length; i++) {
-    //     let current = curve[i].clone();
-    //     let closest = -1;
-    //     let mind = 1000000;
-    //     for (let k = 0; k < randomCenters.length; k++){
-    //         let d = randomCenters[k].distance(current);
-    //         if(d < mind){
-    //             mind = d;
-    //             closest = k;
-    //         }
-    //     }
-    //     if(mind < mind0){
-    //         let p = map(mind, 0, mind0, 0, 1);
-    //         p = Math.pow(p, 2);
-    //         p = map(p, 0, 1, 0, mind0);
-    //         let cp = randomCenters[closest].clone();
-    //         let topoint = current.sub(cp);
-    //         topoint.normalize();
-    //         topoint.multiplyScalar(p);
-    //         topoint.add(cp);
-    //         curve[i] = topoint.clone();
-    //     }
-    // }
+    let mind0 = 800;
+    for (let i = 0; i < curve.length; i++) {
+        let current = curve[i].clone();
+        let closest = -1;
+        let mind = 1000000;
+        for (let k = 0; k < randomCenters.length; k++){
+            let d = randomCenters[k].distance(current);
+            if(d < mind){
+                mind = d;
+                closest = k;
+            }
+        }
+        if(mind < mind0){
+            let p = map(mind, 0, mind0, 0, 1);
+            p = Math.pow(p, 2);
+            p = map(p, 0, 1, 0, mind0);
+            let cp = randomCenters[closest].clone();
+            let topoint = current.sub(cp);
+            topoint.normalize();
+            topoint.multiplyScalar(p);
+            topoint.add(cp);
+            curve[i] = topoint.clone();
+        }
+    }
     
     // console.log(ctries)
     // const roundq = vectors => vectors.map(q => 
@@ -1123,6 +1217,7 @@ function setupCurves(){
 
     // curve = roundq(curve);
 
+    curve.thickness = 2 + 22*Math.pow(1-percent, .5);
     curves.push(curve);
 }
 
@@ -1207,6 +1302,8 @@ document.addEventListener('keydown', function(event) {
         if ('q1234567'.indexOf(event.key) !== -1){
             randomizeState();
         }
+        if(DEBUG)
+            debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
         initRandomState();
         // updateURLParameter('hash', btoa(JSON.stringify({"hash": hash, "aspect": Math.round(aaspect*10000)/10000, 'version': vversion})).toString('base64'));
         main();

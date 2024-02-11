@@ -231,7 +231,7 @@ void main() {
     qv_uv = v_uv.xy + hash12(vec2(39.*v_uv.x+rex, 39.*v_uv.y+rey))*.001*1.;
 
     vec3 color = texture2D(u_texture, v_uv).rgb;
-    vec3 color0 = texture2D(u_texture, qv_uv).rgb;
+    vec3 colorq = texture2D(u_texture, qv_uv).rgb;
     // vec3 qcolor = texture2D(u_texture, qv_uv).rgb;
 
 
@@ -297,6 +297,5 @@ void main() {
     // result = mix(result, u_edgecolor, .4*smoothstep(.1, .2, edges));
 
     gl_FragColor = vec4(vec3(result.rgb), 1.);
-    // gl_FragColor = vec4(vec3(color0.rgb), 1.);
     
 }
